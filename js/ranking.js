@@ -39,7 +39,7 @@
       const btn = event.target.closest(".hash-link");
       if (!btn) return;
       GL.session.setView(Number(btn.dataset.id));
-      window.location.href = "Student.html";
+      window.location.href = "student.html";
     });
   });
 })();

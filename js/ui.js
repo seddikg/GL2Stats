@@ -36,7 +36,7 @@
         /* ignore */
       }
     },
-    // Student.html only opens after a click on a leaderboard hash.
+    // student.html only opens after a click on a leaderboard hash.
     setView(id) {
       safeSet(root.sessionStorage, KEY_VIEW, String(id));
     },
@@ -79,8 +79,8 @@
   function renderNav(active) {
     const links = [
       ["index.html", "Home", "home"],
-      ["Ranking.html", "Ranking", "ranking"],
-      ["Subjects.html", "Subjects", "subjects"],
+      ["ranking.html", "Ranking", "ranking"],
+      ["subjects.html", "Subjects", "subjects"],
     ];
     const items = links
       .map(([href, label, key]) => '<li><a href="' + href + '"' + (key === active ? ' class="active"' : "") + ">" + label + "</a></li>")

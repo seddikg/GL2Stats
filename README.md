@@ -9,11 +9,11 @@ The site is plain HTML, CSS and JavaScript. It runs on GitHub Pages and reads a 
 | Page | What it does |
 | --- | --- |
 | `index.html` | Asks for a last name and the pepper, matches the name to a hash and shows your rank, score, last year average, semester averages and this year average. |
-| `Ranking.html` | Leaderboard sorted by score, highest first. Columns: rank, hash, score, last year, sem 1, sem 2. Equal scores share a rank. |
-| `Student.html` | The marks of one student (hash only, no name), with the class average per subject. Only reachable by clicking a hash on the leaderboard. |
-| `Subjects.html` | Pick a subject (grouped by semester) to see a probability distribution graph with a fitted normal curve and statistics: mean, median, variance, standard deviation, quartiles, skewness and pass rate. |
+| `ranking.html` | Leaderboard sorted by score, highest first. Columns: rank, hash, score, last year, sem 1, sem 2. Equal scores share a rank. |
+| `student.html` | The marks of one student (hash only, no name), with the class average per subject. Only reachable by clicking a hash on the leaderboard. |
+| `subjects.html` | Pick a subject (grouped by semester) to see a probability distribution graph with a fitted normal curve and statistics: mean, median, variance, standard deviation, quartiles, skewness and pass rate. |
 
-Every page except the login screen requires a session: the student id chosen at login is kept in `localStorage`, and `Student.html` also needs a one-time view id in `sessionStorage` set by a click on the leaderboard. There is no server, so "login" only means "find a row by hash".
+Every page except the login screen requires a session: the student id chosen at login is kept in `localStorage`, and `student.html` also needs a one-time view id in `sessionStorage` set by a click on the leaderboard. There is no server, so "login" only means "find a row by hash".
 
 ## Privacy model
 
@@ -34,9 +34,9 @@ This hides names at rest, but it is not strong authentication: the pepper is sha
 ```text
 GL2Stats/
 ├── index.html              # Login and personal dashboard
-├── Ranking.html            # Leaderboard
-├── Student.html            # One student's marks
-├── Subjects.html           # Per-subject statistics and chart
+├── ranking.html            # Leaderboard
+├── student.html            # One student's marks
+├── subjects.html           # Per-subject statistics and chart
 ├── gl2stats.db             # Read-only SQLite database served to the browser
 ├── css/
 │   ├── gl-theme.css        # Colors, fonts and shared theme
@@ -200,7 +200,7 @@ To use the rebuilt database, log in with the same pepper that was in `.env` when
 | --- | --- | --- |
 | [sql.js](https://github.com/sql-js/sql.js) | 1.10.3 | Reading `gl2stats.db` in the browser |
 | [scrypt-js](https://github.com/ricmoo/scrypt-js) | 3.0.1 | Hashing last names in the browser |
-| [Chart.js](https://www.chartjs.org/) | 4.4.1 | Distribution chart on `Subjects.html` |
+| [Chart.js](https://www.chartjs.org/) | 4.4.1 | Distribution chart on `subjects.html` |
 | [Google Fonts](https://fonts.google.com/) | - | Inter and JetBrains Mono |
 | Python standard library | 3.9+ | Building and filling the database |
 

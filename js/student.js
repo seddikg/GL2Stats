@@ -15,14 +15,14 @@
     // Only reachable through a click on the leaderboard.
     const viewId = GL.session.view();
     if (viewId === null) {
-      window.location.replace("Ranking.html");
+      window.location.replace("ranking.html");
       return;
     }
 
     const data = await GL.loadAll();
     const row = data.rows.find((r) => r.id === viewId);
     if (!row) {
-      window.location.replace("Ranking.html");
+      window.location.replace("ranking.html");
       return;
     }
     GL.showErrors(data.errors.filter((e) => e.id === row.id).map((e) => e.message));
@@ -37,7 +37,7 @@
     const ranked = data.rows.filter((r) => r.rank !== null).length;
     const rankPct = row.rank === null || ranked === 0 ? null : Math.round((row.rank / ranked) * 100);
     let html =
-      '<div class="page-head"><a href="Ranking.html">&larr; Back to ranking</a>' +
+      '<div class="page-head"><a href="ranking.html">&larr; Back to ranking</a>' +
       '<h2 class="mt-2">Student <span class="mono accent">' + GL.esc(GL.shortHash(row.hash)) + "</span></h2></div>" +
       '<div class="stats-grid">' +
       card("Rank", row.rank === null ? "-" : "#" + row.rank, "out of " + ranked) +

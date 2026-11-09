@@ -49,7 +49,7 @@
 
     $("my-marks").onclick = () => {
       GL.session.setView(row.id);
-      window.location.href = "Student.html";
+      window.location.href = "student.html";
     };
     return true;
   }
