@@ -28,7 +28,7 @@
     const datasets = [
       {
         type: "bar",
-        label: "Observed" + (myBin >= 0 ? " (your bin is brighter)" : ""),
+        label: "Real Distribution",
         data: dist.probs,
         backgroundColor: fills,
         borderColor: orange,
@@ -40,7 +40,7 @@
     if (dist.normal) {
       datasets.push({
         type: "line",
-        label: "Normal fit",
+        label: "Expected distribution",
         data: dist.normal,
         borderColor: text,
         borderWidth: 2,
@@ -61,7 +61,7 @@
         maintainAspectRatio: false,
         interaction: { mode: "index", intersect: false },
         scales: {
-          x: { title: { display: true, text: "Mark (out of " + cfg.scale + ")" }, grid: { display: false } },
+          x: { title: { display: true, text: "Mark" }, grid: { display: false } },
           y: {
             beginAtZero: true,
             title: { display: true, text: "Probability" },
@@ -74,9 +74,9 @@
             callbacks: {
               label: (ctx) => {
                 const pct = (ctx.parsed.y * 100).toFixed(1) + "%";
-                if (ctx.dataset.type === "line") return "Normal fit: " + pct;
+                if (ctx.dataset.type === "line") return "Expected Distribution: " + pct;
                 const n = dist.counts[ctx.dataIndex];
-                return "Observed: " + pct + " (" + n + (n === 1 ? " student" : " students") + ")";
+                return "Real Distribution: " + pct + " (" + n + (n === 1 ? " student" : " students") + ")";
               },
             },
           },
@@ -104,19 +104,11 @@
     const myRank = GL.isNum(myMark) ? 1 + values.filter((v) => v > myMark).length : null;
 
     const cards = [
-      statCard("Students", String(s.n), "marks recorded"),
-      statCard("Mean (μ)", GL.fmt(s.mean)),
-      statCard("Median", GL.fmt(s.median)),
-      statCard("Std deviation (σ)", GL.fmt(s.std), "population"),
-      statCard("Variance (σ²)", GL.fmt(s.variance), "population"),
-      statCard("Sample std dev (s)", GL.fmt(s.sampleStd), "n - 1"),
+      statCard("Students", String(s.n)),
+      statCard("Mean", GL.fmt(s.mean),"Espérance"),
+      statCard("Std deviation", GL.fmt(s.std), "écarte type"),
       statCard("Min", GL.fmt(s.min)),
       statCard("Max", GL.fmt(s.max)),
-      statCard("Range", GL.fmt(s.range)),
-      statCard("Q1", GL.fmt(s.q1)),
-      statCard("Q3", GL.fmt(s.q3)),
-      statCard("IQR", GL.fmt(s.iqr)),
-      statCard("Skewness", GL.fmt(s.skewness), s.skewness < -0.2 ? "tail to the left" : s.skewness > 0.2 ? "tail to the right" : "roughly symmetric"),
       statCard("Pass rate", (s.passRate * 100).toFixed(1) + "%", "mark >= " + cfg.passMark),
     ];
     if (myRank !== null) {
@@ -141,14 +133,14 @@
     const data = await GL.loadAll();
     GL.showErrors(data.errors.map((e) => e.message));
 
-    let options = "";
+    let options =
+      '<optgroup label="Last year"><option value="' + LAST_YEAR + '">Last year average</option></optgroup>';
     for (const sem of [1, 2]) {
       const subs = data.subjects.filter((s) => s.semester_number === sem);
       if (!subs.length) continue;
       options += '<optgroup label="Semester ' + sem + '">' +
         subs.map((s) => '<option value="' + GL.esc(s.slug) + '">' + GL.esc(s.name) + "</option>").join("") + "</optgroup>";
     }
-    options += '<optgroup label="Last year"><option value="' + LAST_YEAR + '">Last year average</option></optgroup>';
 
     document.getElementById("app").innerHTML =
       '<div class="toolbar"><div class="form-group"><label for="subject-select">Subject</label>' +
