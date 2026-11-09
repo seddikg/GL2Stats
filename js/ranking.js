@@ -32,8 +32,8 @@
       "<th>#</th><th>Hash</th>" +
       '<th class="num">Score</th><th class="num">Last year</th><th class="num">Sem 1</th><th class="num">Sem 2</th>' +
       "</tr></thead><tbody>" + body + "</tbody></table></div>" +
-      '<p class="muted mt-2">Score = (last year + 0.5 + (this year + 0.5) x 2) / 3, where this year is the mean of the semester averages. ' +
-      "Students with equal scores share a rank.</p>";
+      '<p class="muted mt-2">Score = (MPI+GL2*2)/3+0.5,' +
+      "</p>";
 
     document.querySelector(".rank-table tbody").addEventListener("click", (event) => {
       const btn = event.target.closest(".hash-link");

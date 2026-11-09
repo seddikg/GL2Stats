@@ -1,6 +1,7 @@
 (function () {
   const GL = window.GL;
   const cfg = window.GL_CONFIG;
+  const LAST_YEAR = "__last-year__";
   let chart = null;
 
   const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -85,8 +86,10 @@
   }
 
   function render(data, slug, me) {
-    const sub = data.subjects.find((s) => s.slug === slug);
-    const values = data.rows.map((r) => r.marks[slug]).filter(GL.isNum);
+    const isLastYear = slug === LAST_YEAR;
+    const sub = isLastYear ? { name: "Last year average" } : data.subjects.find((s) => s.slug === slug);
+    const markOf = (r) => (isLastYear ? r.previous : r.marks[slug]);
+    const values = data.rows.map(markOf).filter(GL.isNum);
     const out = document.getElementById("subject-out");
 
     if (!values.length) {
@@ -97,7 +100,7 @@
 
     const s = GL.stats(values, cfg.passMark);
     const meRow = data.rows.find((r) => r.id === me);
-    const myMark = meRow ? meRow.marks[slug] : undefined;
+    const myMark = meRow ? markOf(meRow) : undefined;
     const myRank = GL.isNum(myMark) ? 1 + values.filter((v) => v > myMark).length : null;
 
     const cards = [
@@ -120,9 +123,12 @@
       cards.push(statCard("Your mark", GL.fmt(myMark), "rank " + myRank + " of " + s.n));
     }
 
+    const meta = isLastYear
+      ? '<span class="muted">· previous year</span>'
+      : '<span class="muted">· coef ' + GL.fmt(sub.coefficient, 1) + ' · semester ' + sub.semester_number + "</span>";
+
     out.innerHTML =
-      '<div class="card chart-card"><h3>' + GL.esc(sub.name) + ' <span class="muted">· coef ' + GL.fmt(sub.coefficient, 1) +
-      ' · semester ' + sub.semester_number + '</span></h3><div class="chart-box"><canvas id="chart"></canvas></div></div>' +
+      '<div class="card chart-card"><h3>' + GL.esc(sub.name) + " " + meta + '</h3><div class="chart-box"><canvas id="chart"></canvas></div></div>' +
       '<div class="stats-grid">' + cards.join("") + "</div>";
 
     drawChart(document.getElementById("chart"), GL.distribution(values, cfg.scale, cfg.scale), myMark);
@@ -142,6 +148,7 @@
       options += '<optgroup label="Semester ' + sem + '">' +
         subs.map((s) => '<option value="' + GL.esc(s.slug) + '">' + GL.esc(s.name) + "</option>").join("") + "</optgroup>";
     }
+    options += '<optgroup label="Last year"><option value="' + LAST_YEAR + '">Last year average</option></optgroup>';
 
     document.getElementById("app").innerHTML =
       '<div class="toolbar"><div class="form-group"><label for="subject-select">Subject</label>' +
