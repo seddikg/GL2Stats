@@ -2,15 +2,15 @@
 Creates the database and tables for GL2Stats.
 
 Tables:
-    Semester(number INTEGER PRIMARY KEY)
 
     Subject(slug TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             coefficient REAL NOT NULL DEFAULT 1,
-            semester_number INTEGER REFERENCES Semester(number))
+            semester_number INTEGER)
 
     Student(id INTEGER PRIMARY KEY AUTOINCREMENT,
-            hash TEXT NOT NULL UNIQUE,
+            hash TEXT NOT NULL,
+            lastYearsAverage REAL NOT NULL,
             is_enrolled BOOLEAN NOT NULL DEFAULT 1)
 
     Mark(student_id INTEGER NOT NULL REFERENCES Student(id),
@@ -36,9 +36,10 @@ CREATE TABLE IF NOT EXISTS Subject (
 );
 
 CREATE TABLE IF NOT EXISTS Student (
-    id          INTEGER PRIMARY KEY AUTOINCREMENT,
-    hash        TEXT NOT NULL UNIQUE,
-    is_enrolled BOOLEAN NOT NULL DEFAULT 1
+    id               INTEGER PRIMARY KEY AUTOINCREMENT,
+    hash             TEXT NOT NULL,
+    lastYearsAverage REAL NOT NULL,
+    is_enrolled      BOOLEAN NOT NULL DEFAULT 1
 );
 
 CREATE TABLE IF NOT EXISTS Mark (

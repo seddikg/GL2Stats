@@ -1,0 +1,155 @@
+(function () {
+  const GL = window.GL;
+  const cfg = window.GL_CONFIG;
+  let chart = null;
+
+  const css = (name) => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+
+  function statCard(label, value, sub) {
+    return (
+      '<div class="card stat"><div class="value small">' + GL.esc(value) + '</div><div class="label">' +
+      GL.esc(label) + "</div>" + (sub ? '<div class="sub">' + GL.esc(sub) + "</div>" : "") + "</div>"
+    );
+  }
+
+  function drawChart(canvas, dist, myMark) {
+    if (chart) chart.destroy();
+    const orange = css("--orange");
+    const bright = css("--orange-bright");
+    const text = css("--text");
+    const muted = css("--text-muted");
+
+    const myBin = GL.isNum(myMark)
+      ? Math.min(dist.counts.length - 1, Math.max(0, Math.floor(myMark / dist.width)))
+      : -1;
+    const fills = dist.counts.map((_, i) => (i === myBin ? bright : "rgba(255, 122, 26, 0.45)"));
+
+    const datasets = [
+      {
+        type: "bar",
+        label: "Observed" + (myBin >= 0 ? " (your bin is brighter)" : ""),
+        data: dist.probs,
+        backgroundColor: fills,
+        borderColor: orange,
+        borderWidth: 1,
+        borderRadius: 4,
+        order: 2,
+      },
+    ];
+    if (dist.normal) {
+      datasets.push({
+        type: "line",
+        label: "Normal fit",
+        data: dist.normal,
+        borderColor: text,
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.4,
+        order: 1,
+      });
+    }
+
+    Chart.defaults.color = muted;
+    Chart.defaults.borderColor = css("--border");
+    Chart.defaults.font.family = css("--font-mono");
+
+    chart = new Chart(canvas.getContext("2d"), {
+      data: { labels: dist.labels, datasets },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: "index", intersect: false },
+        scales: {
+          x: { title: { display: true, text: "Mark (out of " + cfg.scale + ")" }, grid: { display: false } },
+          y: {
+            beginAtZero: true,
+            title: { display: true, text: "Probability" },
+            ticks: { callback: (v) => Math.round(v * 100) + "%" },
+          },
+        },
+        plugins: {
+          legend: { labels: { color: muted } },
+          tooltip: {
+            callbacks: {
+              label: (ctx) => {
+                const pct = (ctx.parsed.y * 100).toFixed(1) + "%";
+                if (ctx.dataset.type === "line") return "Normal fit: " + pct;
+                const n = dist.counts[ctx.dataIndex];
+                return "Observed: " + pct + " (" + n + (n === 1 ? " student" : " students") + ")";
+              },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  function render(data, slug, me) {
+    const sub = data.subjects.find((s) => s.slug === slug);
+    const values = data.rows.map((r) => r.marks[slug]).filter(GL.isNum);
+    const out = document.getElementById("subject-out");
+
+    if (!values.length) {
+      if (chart) chart.destroy();
+      out.innerHTML = '<div class="alert">No marks recorded for this subject yet. It is not counted in any average.</div>';
+      return;
+    }
+
+    const s = GL.stats(values, cfg.passMark);
+    const meRow = data.rows.find((r) => r.id === me);
+    const myMark = meRow ? meRow.marks[slug] : undefined;
+    const myRank = GL.isNum(myMark) ? 1 + values.filter((v) => v > myMark).length : null;
+
+    const cards = [
+      statCard("Students", String(s.n), "marks recorded"),
+      statCard("Mean (μ)", GL.fmt(s.mean)),
+      statCard("Median", GL.fmt(s.median)),
+      statCard("Std deviation (σ)", GL.fmt(s.std), "population"),
+      statCard("Variance (σ²)", GL.fmt(s.variance), "population"),
+      statCard("Sample std dev (s)", GL.fmt(s.sampleStd), "n - 1"),
+      statCard("Min", GL.fmt(s.min)),
+      statCard("Max", GL.fmt(s.max)),
+      statCard("Range", GL.fmt(s.range)),
+      statCard("Q1", GL.fmt(s.q1)),
+      statCard("Q3", GL.fmt(s.q3)),
+      statCard("IQR", GL.fmt(s.iqr)),
+      statCard("Skewness", GL.fmt(s.skewness), s.skewness < -0.2 ? "tail to the left" : s.skewness > 0.2 ? "tail to the right" : "roughly symmetric"),
+      statCard("Pass rate", (s.passRate * 100).toFixed(1) + "%", "mark >= " + cfg.passMark),
+    ];
+    if (myRank !== null) {
+      cards.push(statCard("Your mark", GL.fmt(myMark), "rank " + myRank + " of " + s.n));
+    }
+
+    out.innerHTML =
+      '<div class="card chart-card"><h3>' + GL.esc(sub.name) + ' <span class="muted">· coef ' + GL.fmt(sub.coefficient, 1) +
+      ' · semester ' + sub.semester_number + '</span></h3><div class="chart-box"><canvas id="chart"></canvas></div></div>' +
+      '<div class="stats-grid">' + cards.join("") + "</div>";
+
+    drawChart(document.getElementById("chart"), GL.distribution(values, cfg.scale, cfg.scale), myMark);
+  }
+
+  GL.boot("subjects", async () => {
+    const me = GL.requireLogin();
+    if (me === null) return;
+
+    const data = await GL.loadAll();
+    GL.showErrors(data.errors.map((e) => e.message));
+
+    let options = "";
+    for (const sem of [1, 2]) {
+      const subs = data.subjects.filter((s) => s.semester_number === sem);
+      if (!subs.length) continue;
+      options += '<optgroup label="Semester ' + sem + '">' +
+        subs.map((s) => '<option value="' + GL.esc(s.slug) + '">' + GL.esc(s.name) + "</option>").join("") + "</optgroup>";
+    }
+
+    document.getElementById("app").innerHTML =
+      '<div class="toolbar"><div class="form-group"><label for="subject-select">Subject</label>' +
+      '<select id="subject-select">' + options + "</select></div></div>" +
+      '<div id="subject-out"></div>';
+
+    const select = document.getElementById("subject-select");
+    select.addEventListener("change", () => render(data, select.value, me));
+    render(data, select.value, me);
+  });
+})();

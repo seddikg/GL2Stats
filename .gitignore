@@ -1,3 +1,16 @@
-/data-management/private/*
+# Private data and secrets (student names, .env)
+/data-management/private/
+
+# Local database and environment files
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+
+# Virtual environment
 /.venv/
-/.venv/*
