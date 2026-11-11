@@ -108,13 +108,28 @@
   // Replaces the whole page content: the site stops working on purpose.
   function showFatal(err) {
     const main = root.document.querySelector("main");
+    const mono = (text) => '<span class="mono">' + esc(text) + "</span>";
     const lines = (err.problems || [])
-      .map((x) => "<li>" + esc(x.name) + " (semester " + x.semester + "): " + x.missing + " of " + x.total + " students have no mark</li>")
+      .map((p) => {
+        let detail;
+        let who;
+        if (p.kind === "zero-weight") {
+          detail = "weight is 0 but " + p.students.length + " student(s) have a value";
+          who = p.students.map(mono).join(", ");
+        } else {
+          detail = p.students.length + " of " + p.total + " students have no value";
+          who = p.students.map(mono).join(", ");
+        }
+        return (
+          "<li><strong>" + esc(p.subject) + "</strong> (semester " + p.semester + ") — " +
+          esc(p.test) + ": " + detail + (who ? "<br>" + who : "") + "</li>"
+        );
+      })
       .join("");
     main.className = "container page";
     main.innerHTML =
       '<div class="alert alert-danger"><h2>FATAL ERROR</h2>' +
-      "<p>Some subjects have marks for only part of the class, so no average can be trusted. The site is stopped until the database is fixed.</p>" +
+      "<p>The marks in the database are inconsistent, so no average can be trusted. The site is stopped until the database is fixed.</p>" +
       "<ul>" + lines + "</ul></div>";
   }
 

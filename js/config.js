@@ -10,5 +10,9 @@ window.GL_CONFIG = {
   dbPath: "gl2stats.db",
   passMark: 10,
   scale: 20,
+  // When true, also check that no student has a value on a zero-weight test.
+  // Setting it to false skips that check; the all-or-none check for published
+  // tests always runs.
+  debug: true,
   sqlJsBase: "https://cdn.jsdelivr.net/npm/sql.js@1.10.3/dist/",
 };

@@ -33,9 +33,10 @@
       const students = query(db, "SELECT id, hash, lastYearsAverage FROM Student WHERE is_enrolled = 1");
       const subjects = query(
         db,
-        "SELECT slug, name, coefficient, semester_number FROM Subject ORDER BY semester_number, rowid"
+        "SELECT slug, name, coefficient, semester_number, midterm_weight, final_weight, lab_weight " +
+          "FROM Subject ORDER BY semester_number, rowid"
       );
-      const marks = query(db, "SELECT student_id, subject_slug, value FROM Mark");
+      const marks = query(db, "SELECT student_id, subject_slug, midterm, final, lab FROM Mark");
       cache = GL.computeAll({ students, subjects, marks });
     } finally {
       db.close();

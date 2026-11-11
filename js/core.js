@@ -7,14 +7,33 @@
 
   const isNum = (x) => typeof x === "number" && Number.isFinite(x);
 
-  // Raised when a subject has marks for some students but not for others.
-  // This is by design: the site refuses to run on incomplete subjects.
+  // The three test types stored on a Mark row. A null value means "not
+  // published"; a weight of 0 means the subject does not have that test.
+  const TESTS = [
+    { value: "midterm", weight: "midterm_weight", label: "midterm" },
+    { value: "final", weight: "final_weight", label: "final" },
+    { value: "lab", weight: "lab_weight", label: "lab" },
+  ];
+
+  function problemMessage(p) {
+    const who = p.students.length ? " [" + p.students.join(", ") + "]" : "";
+    if (p.kind === "zero-weight") {
+      return (
+        "Zero-weight " + p.test + " in " + p.subject + " (semester " + p.semester + "): " +
+        p.students.length + " of " + p.total + " students have a value but the weight is 0" + who
+      );
+    }
+    return (
+      "Incomplete " + p.test + " in " + p.subject + " (semester " + p.semester + "): " +
+      p.students.length + " of " + p.total + " students have no value" + who
+    );
+  }
+
+  // Raised when the Mark table is inconsistent. This is by design: the site
+  // refuses to run on marks that cannot be trusted.
   class FatalDataError extends Error {
     constructor(problems) {
-      super(
-        "A subject has marks for only some students: " +
-          problems.map((x) => x.name + " (semester " + x.semester + "): " + x.missing + " of " + x.total + " missing").join("; ")
-      );
+      super("FATAL: " + problems.map(problemMessage).join("; "));
       this.name = "FatalDataError";
       this.problems = problems;
     }
@@ -51,49 +70,109 @@
 
   /*
    * input:  { students: [{id, hash, lastYearsAverage}],
-   *           subjects: [{slug, name, coefficient, semester_number}],
-   *           marks:    [{student_id, subject_slug, value}] }
+   *           subjects: [{slug, name, coefficient, semester_number,
+   *                       midterm_weight, final_weight, lab_weight}],
+   *           marks:    [{student_id, subject_slug, midterm, final, lab}] }
    * output: { rows, subjects, errors }
+   * A subject mark is the weight-normalised mean of the published tests.
    * Rows are sorted by score, descending, and carry a competition rank.
    */
   function computeAll(input) {
     const subjectBySlug = new Map(input.subjects.map((s) => [s.slug, s]));
-    const marksByStudent = new Map();
-    for (const m of input.marks) {
-      if (!isNum(m.value)) continue;
-      if (!marksByStudent.has(m.student_id)) marksByStudent.set(m.student_id, {});
-      marksByStudent.get(m.student_id)[m.subject_slug] = m.value;
-    }
-
-    // Per subject: everyone marked -> counted, nobody marked -> ignored,
-    // some marked and some not -> fatal error.
     const total = input.students.length;
-    const markedCount = new Map();
-    for (const st of input.students) {
-      for (const slug of Object.keys(marksByStudent.get(st.id) || {})) {
-        markedCount.set(slug, (markedCount.get(slug) || 0) + 1);
-      }
+
+    // student_id -> subject_slug -> Mark row
+    const rowByStudent = new Map();
+    for (const m of input.marks) {
+      if (!rowByStudent.has(m.student_id)) rowByStudent.set(m.student_id, new Map());
+      rowByStudent.get(m.student_id).set(m.subject_slug, m);
     }
-    const active = new Set();
+    const rowOf = (studentId, slug) => {
+      const bySlug = rowByStudent.get(studentId);
+      return bySlug ? bySlug.get(slug) : undefined;
+    };
+
+    /*
+     * Weights live on the Subject row, so there is exactly one weight per test
+     * per subject. For every subject and test type:
+     *   weight is 0         -> the subject has no such test; any value is fatal
+     *   value for everyone   -> the test is published and used
+     *   value for nobody     -> the test is ignored (not published yet)
+     *   value for some       -> fatal error
+     */
+    // The strict clean-database check can be disabled in js/config.js.
+    const loginChecks = !(root.GL_CONFIG && root.GL_CONFIG.debug === false);
+
+    const activeBySlug = new Map();
     const problems = [];
     for (const sub of input.subjects) {
-      const count = markedCount.get(sub.slug) || 0;
-      if (count === 0) continue;
-      if (count < total) {
-        problems.push({ name: sub.name, semester: sub.semester_number, missing: total - count, total });
-      } else {
-        active.add(sub.slug);
+      const active = new Set();
+      for (const test of TESTS) {
+        const weight = sub[test.weight];
+        const hasWeight = isNum(weight) && weight > 0;
+        const missing = [];
+        const withValue = [];
+        const offenders = [];
+        for (const st of input.students) {
+          const row = rowOf(st.id, sub.slug);
+          const value = row ? row[test.value] : null;
+          if (value === null || value === undefined) {
+            missing.push(st.hash);
+          } else {
+            withValue.push(st.hash);
+            if (!hasWeight) offenders.push(st.hash);
+          }
+        }
+        if (loginChecks && offenders.length) {
+          problems.push({
+            kind: "zero-weight",
+            subject: sub.name,
+            semester: sub.semester_number,
+            test: test.label,
+            students: offenders,
+            total,
+          });
+        }
+        if (!hasWeight || withValue.length === 0) continue;
+        if (withValue.length < total) {
+          problems.push({
+            kind: "incomplete",
+            subject: sub.name,
+            semester: sub.semester_number,
+            test: test.label,
+            students: missing,
+            total,
+          });
+        } else {
+          active.add(test.value);
+        }
       }
+      activeBySlug.set(sub.slug, active);
     }
     if (problems.length) throw new FatalDataError(problems);
 
     const errors = [];
     const rows = input.students.map((st) => {
-      const allMarks = marksByStudent.get(st.id) || {};
       const marks = {};
-      for (const slug of Object.keys(allMarks)) {
-        if (active.has(slug)) marks[slug] = allMarks[slug];
+      for (const sub of input.subjects) {
+        const active = activeBySlug.get(sub.slug);
+        if (!active || active.size === 0) continue;
+        const row = rowOf(st.id, sub.slug);
+        if (!row) continue;
+
+        let sumMarks = 0;
+        let sumWeights = 0;
+        for (const test of TESTS) {
+          if (!active.has(test.value)) continue;
+          const value = row[test.value];
+          const weight = sub[test.weight];
+          if (!isNum(value) || !isNum(weight) || weight <= 0) continue;
+          sumMarks += value * weight;
+          sumWeights += weight;
+        }
+        if (sumWeights > 0) marks[sub.slug] = sumMarks / sumWeights;
       }
+
       const bySem = { 1: [], 2: [] };
       for (const [slug, value] of Object.entries(marks)) {
         const sub = subjectBySlug.get(slug);

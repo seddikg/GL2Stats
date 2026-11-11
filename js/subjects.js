@@ -28,7 +28,7 @@
     const datasets = [
       {
         type: "bar",
-        label: "Real Distribution",
+        label: "Observed distribution",
         data: dist.probs,
         backgroundColor: fills,
         borderColor: orange,
@@ -40,7 +40,7 @@
     if (dist.normal) {
       datasets.push({
         type: "line",
-        label: "Expected distribution",
+        label: "Normal fit",
         data: dist.normal,
         borderColor: text,
         borderWidth: 2,
@@ -74,9 +74,9 @@
             callbacks: {
               label: (ctx) => {
                 const pct = (ctx.parsed.y * 100).toFixed(1) + "%";
-                if (ctx.dataset.type === "line") return "Expected Distribution: " + pct;
+                if (ctx.dataset.type === "line") return "Normal fit: " + pct;
                 const n = dist.counts[ctx.dataIndex];
-                return "Real Distribution: " + pct + " (" + n + (n === 1 ? " student" : " students") + ")";
+                return "Observed distribution: " + pct + " (" + n + (n === 1 ? " student" : " students") + ")";
               },
             },
           },

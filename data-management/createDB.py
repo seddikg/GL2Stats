@@ -5,8 +5,11 @@ Tables:
 
     Subject(slug TEXT PRIMARY KEY,
             name TEXT NOT NULL,
-            coefficient REAL NOT NULL DEFAULT 1,
-            semester_number INTEGER)
+            coefficient REAL NOT NULL,
+            semester_number INTEGER,
+            midterm_weight REAL NOT NULL DEFAULT 0,
+            final_weight REAL NOT NULL DEFAULT 0,
+            lab_weight REAL NOT NULL DEFAULT 0)
 
     Student(id INTEGER PRIMARY KEY AUTOINCREMENT,
             hash TEXT NOT NULL,
@@ -15,7 +18,9 @@ Tables:
 
     Mark(student_id INTEGER NOT NULL REFERENCES Student(id),
          subject_slug TEXT NOT NULL REFERENCES Subject(slug),
-         value REAL,
+         midterm REAL default NULL,
+         final REAL default NULL,
+         lab REAL default NULL,
          PRIMARY KEY (student_id, subject_slug))
 """
 import sqlite3
@@ -31,8 +36,11 @@ CREATE TABLE IF NOT EXISTS Semester (
 CREATE TABLE IF NOT EXISTS Subject (
     slug            TEXT PRIMARY KEY,
     name            TEXT NOT NULL,
-    coefficient     REAL NOT NULL DEFAULT 1,
-    semester_number INTEGER REFERENCES Semester(number)
+    coefficient     REAL NOT NULL,
+    semester_number INTEGER REFERENCES Semester(number),
+    midterm_weight  REAL NOT NULL DEFAULT 0,
+    final_weight    REAL NOT NULL DEFAULT 0,
+    lab_weight      REAL NOT NULL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS Student (
@@ -45,7 +53,9 @@ CREATE TABLE IF NOT EXISTS Student (
 CREATE TABLE IF NOT EXISTS Mark (
     student_id   INTEGER NOT NULL REFERENCES Student(id),
     subject_slug TEXT    NOT NULL REFERENCES Subject(slug),
-    value        REAL,
+    midterm      REAL    DEFAULT NULL,
+    final        REAL    DEFAULT NULL,
+    lab          REAL    DEFAULT NULL,
     PRIMARY KEY (student_id, subject_slug)
 );
 """
@@ -67,7 +77,5 @@ def create_database(db_path=DB_PATH):
 if __name__ == "__main__":
     path = create_database()
     print(f"Database created at {path}")
-
-import sqlite3
 
 

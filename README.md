@@ -57,10 +57,13 @@ GL2Stats/
     ├── db.py               # Deletes and rebuilds the whole database
     ├── hashing.py          # Python version of the last-name hash
     ├── insertStudents.py   # Imports private/students.json as hashes
-    ├── insertSubjects.py   # Inserts semesters and subjects
-    └── private/            # Gitignored: names and secrets
+    ├── insertSubjects.py   # Inserts semesters, subjects and test weights
+    ├── importMarks.py      # Imports one test's marks for one subject
+    └── private/            # Gitignored: names, marks and secrets
         ├── .env            # Contains PEPPER_ENV_VAR
-        └── students.json   # Students with their last year average
+        ├── students.json   # Students with their last year average
+        ├── marksExample.json
+        └── marks.json      # Filled from the example, one test at a time
 ```
 
 The frontend has no build step and no global state other than `window.GL` and `window.GL_CONFIG`. `core.js` is DOM-free so it can also be loaded in Node for testing.
@@ -73,7 +76,10 @@ Semester(number INTEGER PRIMARY KEY);
 Subject(slug TEXT PRIMARY KEY,
         name TEXT NOT NULL,
         coefficient REAL NOT NULL DEFAULT 1,
-        semester_number INTEGER REFERENCES Semester(number));
+        semester_number INTEGER REFERENCES Semester(number),
+        midterm_weight REAL NOT NULL DEFAULT 0,
+        final_weight REAL NOT NULL DEFAULT 0,
+        lab_weight REAL NOT NULL DEFAULT 0);
 
 Student(id INTEGER PRIMARY KEY AUTOINCREMENT,
         hash TEXT NOT NULL,
@@ -82,7 +88,9 @@ Student(id INTEGER PRIMARY KEY AUTOINCREMENT,
 
 Mark(student_id INTEGER NOT NULL REFERENCES Student(id),
      subject_slug TEXT NOT NULL REFERENCES Subject(slug),
-     value REAL,
+     midterm REAL,
+     final REAL,
+     lab REAL,
      PRIMARY KEY (student_id, subject_slug));
 ```
 
@@ -90,7 +98,8 @@ Mark(student_id INTEGER NOT NULL REFERENCES Student(id),
 
 ## Averages, score and rank
 
-- A semester average is the coefficient-weighted mean of the marks in that semester: `sum(mark * coefficient) / sum(coefficient)`.
+- A subject mark is the test-weight-weighted mean of its published tests: `sum(test mark * test weight) / sum(test weight)`. A test with weight `0` does not exist for that subject.
+- A semester average is the coefficient-weighted mean of the subject marks in that semester: `sum(mark * coefficient) / sum(coefficient)`.
 - The this-year average is the mean of the two semester averages, or the only one that exists.
 - The score is:
 
@@ -102,11 +111,11 @@ Mark(student_id INTEGER NOT NULL REFERENCES Student(id),
 
 - Rows are sorted by score, highest first. Equal scores share a rank and the next distinct score skips the tied positions.
 
-Marks are handled strictly on purpose. A subject with no marks at all is ignored in every average. A subject that has marks for some students but not for others is a fatal data error: the site stops and lists the incomplete subjects instead of showing averages that cannot be trusted.
+Marks are handled strictly on purpose. A test with no marks at all is ignored in every average. A test that has marks for some students but not all is a fatal data error: the site stops and lists the incomplete tests instead of showing averages that cannot be trusted.
 
 ## Statistics page
 
-For the selected subject, `js/core.js` computes from the recorded marks:
+For the selected subject, `js/core.js` computes from the subject marks described above:
 
 - number of students, mean, median, min, max and range
 - population variance and standard deviation
@@ -177,7 +186,15 @@ python data-management/insertSubjects.py
 python data-management/insertStudents.py
 ```
 
-`insertStudents.py` hashes each `last_name` and adds one row per student. Running it again only inserts hashes that are not already present, so students sharing a last name are preserved. Marks are then written into the `Mark` table with Python and `sqlite3` (or any SQLite client), using the student ids and subject slugs from the database.
+`insertStudents.py` hashes each `last_name` and adds one row per student. Running it again only inserts hashes that are not already present, so students sharing a last name are preserved.
+
+To import marks, copy `private/marksExample.json` to `private/marks.json`, set `SUBJECT` and `TEST_TYPE` (`midterm`, `final` or `lab`) at the top of `importMarks.py`, fill in the marks, then run:
+
+```bash
+python data-management/importMarks.py
+```
+
+The script writes each mark into the column selected by `TEST_TYPE`. A null mark clears that test for the student and leaves the other tests untouched. Any `TEST_TYPE` other than `midterm`, `final` or `lab` is a fatal error. Test weights are edited per subject in the last three fields of each `SUBJECTS` tuple in `insertSubjects.py`; rerun that script to apply them.
 
 After changing marks, commit the database again. Because `*.db` is gitignored, force-add it:
 
@@ -212,4 +229,4 @@ All frontend dependencies are loaded from CDNs, so the site needs an internet co
 - The pepper is shared out of band; there is no account system or server-side check.
 - The database is public and read-only. All writes happen offline through Python.
 - Page data is loaded once per page load and cached in memory for that load.
-- The site refuses to display averages when a subject has incomplete marks for the class, by design.
+- The site refuses to display averages when a published test is missing marks for part of the class, by design.

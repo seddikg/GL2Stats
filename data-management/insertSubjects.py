@@ -12,36 +12,36 @@ DB_PATH = Path(__file__).resolve().parent.parent / "gl2stats.db"
 
 SEMESTERS = [1, 2]
 
-# (slug, name, coefficient, semester_number)
+# (slug, name, coefficient, semester_number, midterm_weight, final_weight, lab_weight)
 SUBJECTS = [
     # Semester 1
-    ("proba",  "Probabilités et Statistiques",   3,   1),
-    ("math-signal",       "Mathématiques du signal",        3,   1),
-    ("ado",   "Architecture des ordinateurs",   3,   1),
-    ("se",      "Systèmes d'exploitation",        3,   1),
-    ("tx",    "Techniques de transmission",     3,   1),
-    ("bdd", "Bases de données relationnelles", 4, 1),
-    ("oop", "Programmation orientée objet", 4,   1),
-    ("python",      "Atelier Python Avancé",          2,   1),
-    ("cpp",                "Atelier C++",                    2,   1),
-    ("anglais-s1",                 "Anglais",                        1.5, 1),
-    ("gestion",                    "Gestion",                        1.5, 1),
-    ("francais-s1",                "Français",                       1.5, 1),
+    ("proba", "Probabilités et Statistiques", 3, 1, 0.3, 0.7, 0),
+    ("math-signal", "Mathématiques du signal", 3, 1, 0.3, 0.7, 0),
+    ("ado", "Architecture des ordinateurs", 3, 1, 0.3, 0.7, 0),
+    ("se", "Systèmes d'exploitation", 3, 1, 0.3, 0.7, 0),
+    ("tx", "Techniques de transmission", 3, 1, 0.3, 0.7, 0),
+    ("bdd", "Bases de données relationnelles", 4, 1, 0.3, 0.7, 0),
+    ("oop", "Programmation orientée objet", 4, 1, 0.3, 0.7, 0),
+    ("python", "Atelier Python Avancé", 2, 1, 0.3, 0.7, 0),
+    ("cpp", "Atelier C++", 2, 1, 0.3, 0.7, 0),
+    ("anglais-s1", "Anglais", 1.5, 1, 0.3, 0.7, 0),
+    ("gestion", "Gestion", 1.5, 1, 0.3, 0.7, 0),
+    ("francais-s1", "Français", 1.5, 1, 0.3, 0.7, 0),
 
     # Semester 2
-    ("algebre",                    "Algèbre",                        3,   2),
-    ("analyse",                    "Analyse Mathématique",           3,   2),
-    ("sgbd",                       "Systèmes de gestion de bases de données", 2.5, 2),
-    ("conception",                 "Conception des systèmes d'information",   4,   2),
-    ("java",                       "Atelier Java Avancé",            2,   2),
-    ("dev-web",                    "Développement Web",              2,   2),
-    ("reseaux",                    "Architecture des réseaux",       3,   2),
-    ("applications-reparties",     "Applications réparties",         2.5, 2),
-    ("unix",                        "Système d'exploitation UNIX",    2,   2),
-    ("anglais-s2",                 "Anglais",                        1.5, 2),
-    ("droit",                      "Droit de l'homme",               1.5, 2),
-    ("francais-s2",                "Français",                       1.5, 2),
-    ("comptabilite",               "Comptabilité",                   1.5, 2),
+    ("algebre", "Algèbre", 3, 2, 0.3, 0.7, 0),
+    ("analyse", "Analyse Mathématique", 3, 2, 0.3, 0.7, 0),
+    ("sgbd", "Systèmes de gestion de bases de données", 2.5, 2, 0.3, 0.7, 0),
+    ("conception", "Conception des systèmes d'information", 4, 2, 0.3, 0.7, 0),
+    ("java", "Atelier Java Avancé", 2, 2, 0.3, 0.7, 0),
+    ("dev-web", "Développement Web", 2, 2, 0.3, 0.7, 0),
+    ("reseaux", "Architecture des réseaux", 3, 2, 0.3, 0.7, 0),
+    ("applications-reparties", "Applications réparties", 2.5, 2, 0.3, 0.7, 0),
+    ("unix", "Système d'exploitation UNIX", 2, 2, 0.3, 0.7, 0),
+    ("anglais-s2", "Anglais", 1.5, 2, 0.3, 0.7, 0),
+    ("droit", "Droit de l'homme", 1.5, 2, 0.3, 0.7, 0),
+    ("francais-s2", "Français", 1.5, 2, 0.3, 0.7, 0),
+    ("comptabilite", "Comptabilité", 1.5, 2, 0.3, 0.7, 0),
 ]
 
 
@@ -57,12 +57,18 @@ def insert_subjects(db_path=DB_PATH):
 
         connection.executemany(
             """
-            INSERT INTO Subject (slug, name, coefficient, semester_number)
-            VALUES (?, ?, ?, ?)
+            INSERT INTO Subject (
+                slug, name, coefficient, semester_number,
+                midterm_weight, final_weight, lab_weight
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(slug) DO UPDATE SET
                 name            = excluded.name,
                 coefficient     = excluded.coefficient,
-                semester_number = excluded.semester_number
+                semester_number = excluded.semester_number,
+                midterm_weight  = excluded.midterm_weight,
+                final_weight    = excluded.final_weight,
+                lab_weight      = excluded.lab_weight
             """,
             SUBJECTS,
         )
