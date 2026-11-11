@@ -10,8 +10,8 @@ The site is plain HTML, CSS and JavaScript. It runs on GitHub Pages and reads a 
 | --- | --- |
 | `index.html` | Asks for a last name and the pepper, matches the name to a hash and shows your rank, score, last year average, semester averages and this year average. |
 | `ranking.html` | Leaderboard sorted by score, highest first. Columns: rank, hash, score, last year, sem 1, sem 2. Equal scores share a rank. |
-| `student.html` | The marks of one student (hash only, no name), with the class average per subject. Only reachable by clicking a hash on the leaderboard. |
-| `subjects.html` | Pick a subject (grouped by semester) to see a probability distribution graph with a fitted normal curve and statistics: mean, median, variance, standard deviation, quartiles, skewness and pass rate. |
+| `student.html` | The marks of one student (hash only, no name), with the class average per subject and per test. Only reachable by clicking a hash on the leaderboard. |
+| `subjects.html` | Pick a subject (grouped by semester) and switch between the same distribution graph and statistics for each test with a non-zero weight and for the whole subject. Tests with no marks show N/A. |
 
 Every page except the login screen requires a session: the student id chosen at login is kept in `localStorage`, and `student.html` also needs a one-time view id in `sessionStorage` set by a click on the leaderboard. There is no server, so "login" only means "find a row by hash".
 
@@ -115,7 +115,7 @@ Marks are handled strictly on purpose. A test with no marks at all is ignored in
 
 ## Statistics page
 
-For the selected subject, `js/core.js` computes from the subject marks described above:
+For the selected subject, `js/core.js` computes the same statistics for each test with a non-zero weight and for the whole subject mark described above:
 
 - number of students, mean, median, min, max and range
 - population variance and standard deviation

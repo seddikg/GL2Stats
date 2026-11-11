@@ -173,6 +173,16 @@
         if (sumWeights > 0) marks[sub.slug] = sumMarks / sumWeights;
       }
 
+      const tests = {};
+      for (const sub of input.subjects) {
+        const markRow = rowOf(st.id, sub.slug);
+        tests[sub.slug] = {
+          midterm: markRow ? markRow.midterm : null,
+          final: markRow ? markRow.final : null,
+          lab: markRow ? markRow.lab : null,
+        };
+      }
+
       const bySem = { 1: [], 2: [] };
       for (const [slug, value] of Object.entries(marks)) {
         const sub = subjectBySlug.get(slug);
@@ -190,6 +200,7 @@
         hash: st.hash,
         previous: prev,
         marks,
+        tests,
         s1,
         s2,
         thisYear,
@@ -320,7 +331,7 @@
     return { counts, probs, labels, normal, width };
   }
 
-  Object.assign(GL, { FatalDataError, isNum, weightedAverage, thisYearAverage, score, computeAll, stats, distribution, normalCdf });
+  Object.assign(GL, { FatalDataError, TESTS, isNum, weightedAverage, thisYearAverage, score, computeAll, stats, distribution, normalCdf });
 
   if (typeof module !== "undefined" && module.exports) module.exports = GL;
 })(typeof window !== "undefined" ? window : globalThis);

@@ -64,6 +64,23 @@ select { cursor: pointer; }
 optgroup { color: var(--orange-bright); background: var(--bg-elevated); font-style: normal; }
 option { color: var(--text); background: var(--bg-elevated); }
 
+.subject-tabs { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.25rem; }
+.subject-tabs button {
+  padding: 0.45rem 0.9rem;
+  font: inherit;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.subject-tabs button:hover { color: var(--orange-bright); border-color: var(--orange); }
+.subject-tabs button.active {
+  color: #000;
+  background: linear-gradient(135deg, var(--orange-bright), var(--orange));
+  border-color: transparent;
+}
+
 .chart-card { padding: 1.25rem; margin-bottom: 1.5rem; }
 .chart-box { position: relative; height: 340px; }
 
@@ -72,6 +89,11 @@ option { color: var(--text); background: var(--bg-elevated); }
 .mark-cell.mid  { color: var(--warning); }
 .mark-cell.fail { color: var(--danger); }
 .mark-cell.none { color: var(--text-faint); font-weight: 400; }
+
+/* student page: subject row followed by its test rows */
+.student-tests tr.subject-row td { border-top: 1px solid var(--border-strong); }
+.student-tests tr.subject-row:first-child td { border-top: 0; }
+.student-tests tr.test-row td:first-child { padding-left: 2rem; color: var(--text-muted); }
 
 h3.sem-title { margin: 2rem 0 0.9rem; }
 h3.sem-title::before { content: "// "; font-family: var(--font-mono); color: var(--orange); font-weight: 500; }

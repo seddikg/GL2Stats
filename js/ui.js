@@ -121,7 +121,7 @@
           who = p.students.map(mono).join(", ");
         }
         return (
-          "<li><strong>" + esc(p.subject) + "</strong> (semester " + p.semester + ") — " +
+          "<li><strong>" + esc(p.subject) + "</strong> (semester " + p.semester + "): " +
           esc(p.test) + ": " + detail + (who ? "<br>" + who : "") + "</li>"
         );
       })
